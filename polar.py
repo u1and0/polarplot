@@ -29,16 +29,26 @@ def _mirror(self, axis=0):
     args: axis: (0|1|x|y)
     return: pandas.Series or pandas.DataFrame
         """
-    index = self.index  # copy of index
-    df = self.append(self.iloc[-2::-1], ignore_index=True)  # mirror data
-    new_index = {
-        0: np.r_[index, -index[-2::-1]],  # 0 or xのとき、水平線に対する鏡像
-        1: np.r_[index, index[1:] + index[-1]],  # 1 or yのとき、垂直線に対する鏡像
-        'x': np.r_[index, -index[-2::-1]],
-        'y': np.r_[index, index[1:] + index[-1]],
-    }
-    df.index = new_index[axis]  # reset index
-    return df
+    copy_index = self.index  # copy of index
+    if axis == 'x' or axis == 0:
+        mirror_df = self.iloc[::-1].append(
+            self.iloc[1:], ignore_index=True)  # mirror data
+        new_index = np.r_[copy_index[::-1],
+                          -copy_index[1:]]  # 0 or xのとき、水平線に対する鏡像
+    elif axis == 'y' or axis == 1:
+        mirror_df = self.append(
+            self.iloc[-2::-1], ignore_index=True)  # mirror data
+        new_index = np.r_[copy_index, copy_index[1:] +
+                          copy_index[-1]]  # 1 or yのとき、垂直線に対する鏡像
+
+    # new_index = {
+    #     0: np.r_[index, -index[-2::-1]],  # 0 or xのとき、水平線に対する鏡像
+    #     1: np.r_[index, index[1:] + index[-1]],  # 1 or yのとき、垂直線に対する鏡像
+    #     'x': np.r_[index, -index[-2::-1]],
+    #     'y': np.r_[index, index[1:] + index[-1]],
+    # }
+    mirror_df.index = new_index  # reset index
+    return mirror_df
 
 
 # 関数のメソッド化
