@@ -4,6 +4,9 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import plotly.graph_objs as go
+import plotly.offline
+plotly.offline.init_notebook_mode(connected=False)
 
 
 def _polarplot(df, **kwargs):
@@ -16,6 +19,34 @@ def _polarplot(df, **kwargs):
     ax = plt.subplot(111, projection='polar')  # Polar plot
     ax = _df.plot(ax=ax, **kwargs)
     return ax
+
+
+def _ipolarplot(df, layout=None, *args, **kwargs):
+    """polar iplot
+        usage:
+            df.ipolarplot(layout=<layout>, mode=<mode>, marker=<marker>...)
+
+        args:
+            df: Data (pandas.Series or DataFrame object)
+            layout: go.Layout args (dict like)
+            *args, **kwargs: Scatterpolar args such as marker, mode...
+
+        return:
+            plotly.offline.iplot(data, layout)
+    """
+    if isinstance(df, pd.Series):  # Type Series
+        data = [go.Scatterpolar(r=df, theta=df.index)]
+    else:  # Type DataFrame
+        data = list()
+        for _data in df.columns:
+            # Make polar plot data
+            polar = go.Scatterpolar(
+                r=df[_data], theta=df.index, name=_data, *args, **kwargs)
+            data.append(polar)  # Append all columns in data
+    # Use layout if designated
+    fig = go.Figure(data=data) if not layout\
+        else go.Figure(data=data, layout=go.Layout(layout))
+    return plotly.offline.iplot(fig)
 
 
 def _mirror(df, ccw=True):
@@ -39,5 +70,6 @@ def _mirror(df, ccw=True):
 
 # Use as pandas methods
 for cls in (pd.DataFrame, pd.Series):
-    setattr(cls, 'mirror', _mirror)
     setattr(cls, 'polarplot', _polarplot)
+    setattr(cls, 'ipolarplot', _ipolarplot)
+    setattr(cls, 'mirror', _mirror)

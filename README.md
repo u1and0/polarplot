@@ -1,3 +1,6 @@
+
+![Peek 2018-05-27 01-10.gif](https://qiita-image-store.s3.amazonaws.com/0/113494/9fe51d31-caca-c6dd-9374-54f6e739c1e5.gif)
+
 ![polarplot_33_1.png](https://qiita-image-store.s3.amazonaws.com/0/113494/489dcdd9-76fc-fb9b-0d83-7bbed18029a9.png)
 
 
@@ -19,6 +22,9 @@ import polar
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import plotly.graph_objs as go
+import plotly.offline
+plotly.offline.init_notebook_mode(connected=False)
 
 
 def _polarplot(df, **kwargs):
@@ -31,6 +37,34 @@ def _polarplot(df, **kwargs):
     ax = plt.subplot(111, projection='polar')  # Polar plot
     ax = _df.plot(ax=ax, **kwargs)
     return ax
+
+
+def _ipolarplot(df, layout=None, *args, **kwargs):
+    """polar iplot
+        usage:
+            df.ipolarplot(layout=<layout>, mode=<mode>, marker=<marker>...)
+
+        args:
+            df: Data (pandas.Series or DataFrame object)
+            layout: go.Layout args (dict like)
+            *args, **kwargs: Scatterpolar args such as marker, mode...
+
+        return:
+            plotly.offline.iplot(data, layout)
+    """
+    if isinstance(df, pd.Series):  # Type Series
+        data = [go.Scatterpolar(r=df, theta=df.index)]
+    else:  # Type DataFrame
+        data = list()
+        for _data in df.columns:
+            # Make polar plot data
+            polar = go.Scatterpolar(
+                r=df[_data], theta=df.index, name=_data, *args, **kwargs)
+            data.append(polar)  # Append all columns in data
+    # Use layout if designated
+    fig = go.Figure(data=data) if not layout\
+        else go.Figure(data=data, layout=go.Layout(layout))
+    return plotly.offline.iplot(fig)
 
 
 def _mirror(df, ccw=True):
@@ -54,8 +88,9 @@ def _mirror(df, ccw=True):
 
 # Use as pandas methods
 for cls in (pd.DataFrame, pd.Series):
-    setattr(cls, 'mirror', _mirror)
     setattr(cls, 'polarplot', _polarplot)
+    setattr(cls, 'ipolarplot', _ipolarplot)
+    setattr(cls, 'mirror', _mirror)
 ```
 
 # Seriesで極座標プロット
@@ -781,8 +816,133 @@ df.mirror(False).polarplot()
 
 
 
+# 動的プロット
+ [Polar Charts in Python](https://plot.ly/python/polar-chart/)を参考にplotlyを利用してインタラクティブな極座標プロットを描いてみます。
+
+まずはplotlyのインポートとオフラインモードの有効化
+
+
+```python
+import plotly.graph_objs as go
+import plotly.offline
+plotly.offline.init_notebook_mode(connected=False)
+```
+
+データをリスト型にして`go.Figure()`クラスの引数とします。
+
+```python
+data = [
+    go.Scatterpolar(
+        r = df['sin wave'],
+        theta = df.index,
+    ),
+    go.Scatterpolar(
+        r = df['3sin wave'],
+        theta = df.index,
+    )
+]
+
+fig = go.Figure(data=data)
+plotly.offline.iplot(fig)
+```
+
+![newplot.png](https://qiita-image-store.s3.amazonaws.com/0/113494/70b021a5-cbdc-df16-feff-1ea4af046a2b.png)
+
+これを参考に`polarplot()`をまねて`ipolarplot()`を作成しました。
+
+```python:_ipolarplot.py
+def _ipolarplot(df, layout=None, *args, **kwargs):
+    if isinstance(df, pd.Series):  # Type Series
+        data = [go.Scatterpolar(r=df, theta=df.index)]
+    else:  # Type DataFrame
+        data = list()
+        for _data in df.columns:
+            # Make polar plot data
+            polar = go.Scatterpolar(
+                r=df[_data], theta=df.index, name=_data, *args, **kwargs)
+            data.append(polar)  # Append all columns in data
+    # Use layout if designated
+    fig = go.Figure(data=data) if not layout\
+        else go.Figure(data=data, layout=go.Layout(layout))
+    return plotly.offline.iplot(fig)
+
+for cls in (pd.DataFrame, pd.Series):
+    setattr(cls, 'ipolarplot', _ipolarplot)
+```
+
+```python
+sr.ipolarplot()
+```
+
+![newplot1.png](https://qiita-image-store.s3.amazonaws.com/0/113494/18999974-0a8e-86b7-6614-86644eab50bd.png)
+
+
+
+```python
+df.ipolarplot()
+```
+
+![Peek 2018-05-27 01-10.gif](https://qiita-image-store.s3.amazonaws.com/0/113494/9fe51d31-caca-c6dd-9374-54f6e739c1e5.gif)
+
+
+`**kwargs`として、`go.Scatter()`に渡す引数と同じものが使えます。
+レイアウトは辞書型として内部的に`go.Layout()`に渡しています。
+
+
+```python
+df.mirror().ipolarplot(mode='markers', layout=dict(title='sin & 3sin', showlegend=False))
+```
+
+![newplot3.png](https://qiita-image-store.s3.amazonaws.com/0/113494/c7fa5e4f-7715-cddf-f87f-5906db3ffe45.png)
+
+
+
+塗りつぶしやレンジ、ティックスの幅を変えることもできますが、plotlyの指定の仕方はやや複雑です。
+
+plotly polarchartの複雑な設定は先にも挙げた[Polar Charts in Python](https://plot.ly/python/polar-chart/)を参考にしました。
+
+
+```python
+df.mirror().mirror().ipolarplot(fill='toself',
+                                layout=dict(
+                                    polar=dict(
+                                        radialaxis = dict(
+                                                        visible=True,
+                                                        range=[0,1.2],
+                                                    ),
+                                        angularaxis = dict(
+                                                        dtick=15
+                                                        )
+                                            )
+                                       )
+                                )
+```
+
+
+![newplot4.png](https://qiita-image-store.s3.amazonaws.com/0/113494/e3d4d62e-42ac-2081-da99-85623a6e3743.png)
+
+
+
+
 # まとめ
-polar.pyの`polarplot()`メソッドによりデータフレームから極座標プロットをメソッドとして扱えるようになりました。また、`mirror()`メソッドにより線対称にデータを増やすことが可能になりました。
+polar.pyを使用して次のことができました。
+
+* `polarplot()`メソッドによりデータフレームから極座標プロットをメソッドとして扱えるようになりました。
+* `mirror()`メソッドにより線対称にデータを増やすことが可能になりました。
+* plotlyを利用した`ipolarplot()`メソッドを使用して、ズームイン、ズームアウト、数値をインタラクティブに表示可能なプロットを描けました。
 
 コードとjupyter notebookはgithubにあげました。
 [u1and0/polarplot](https://github.com/u1and0/polarplot)
+
+
+
+
+
+
+
+
+
+
+
+
+
