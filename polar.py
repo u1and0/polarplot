@@ -13,45 +13,32 @@ def _polarplot(df, **kwargs):
     Same args with `df.plot()`
     """
     _df = df.copy()
-    _df.index = _df.index * np.pi / 180  # ラジアン変換
-    ax = plt.subplot(111, projection='polar')  # 極座標プロット
-    ax = _df.plot(ax=ax, kind='line', **kwargs)
+    _df.index = _df.index * np.pi / 180  # Convert radian
+    ax = plt.subplot(111, projection='polar')  # Polar plot
+    ax = _df.plot(ax=ax, **kwargs)
     return ax
 
 
-def _mirror(self, axis=0):
+def _mirror(self, ccw=True):
     """Make a mirror copy of DataFrame with respect to the line
-
     usage:
-        df.mirror(0) ...same as df.mirror() or df.mirror('x')
-        df.mirror(1) ...same as df.mirror('y')
-
-    args: axis: (0|1|x|y)
+        df.mirror(ccw=True)...data increase to Counter Clock Wise(ccw)
+        df.mirror(ccw=False)...data increase to Clock Wise(cw)
+    args: ccw(bool) default True
     return: pandas.Series or pandas.DataFrame
-        """
-    copy_index = self.index  # copy of index
-    if axis == 'x' or axis == 0:
-        mirror_df = self.iloc[::-1].append(
-            self.iloc[1:], ignore_index=True)  # mirror data
-        new_index = np.r_[copy_index[::-1],
-                          -copy_index[1:]]  # 0 or xのとき、水平線に対する鏡像
-    elif axis == 'y' or axis == 1:
-        mirror_df = self.append(
-            self.iloc[-2::-1], ignore_index=True)  # mirror data
-        new_index = np.r_[copy_index, copy_index[1:] +
-                          copy_index[-1]]  # 1 or yのとき、垂直線に対する鏡像
-
-    # new_index = {
-    #     0: np.r_[index, -index[-2::-1]],  # 0 or xのとき、水平線に対する鏡像
-    #     1: np.r_[index, index[1:] + index[-1]],  # 1 or yのとき、垂直線に対する鏡像
-    #     'x': np.r_[index, -index[-2::-1]],
-    #     'y': np.r_[index, index[1:] + index[-1]],
-    # }
+    """
+    copy_index = self.index
+    if ccw:  # data increase to Counter Clock Wise(ccw)
+        mirror_df = self.append(self.iloc[-2::-1], ignore_index=True)
+        new_index = np.r_[copy_index, copy_index[1:] + copy_index[-1]]
+    else:  # data increase to Clock Wise(cw)
+        mirror_df = self.iloc[::-1].append(self.iloc[1:], ignore_index=True)
+        new_index = np.r_[copy_index[::-1], -copy_index[1:]]
     mirror_df.index = new_index  # reset index
     return mirror_df
 
 
-# 関数のメソッド化
+# Use as pandas methods
 for cls in (pd.DataFrame, pd.Series):
     setattr(cls, 'mirror', _mirror)
     setattr(cls, 'polarplot', _polarplot)
