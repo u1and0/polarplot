@@ -1,5 +1,5 @@
+![polarplot_33_1.png](https://qiita-image-store.s3.amazonaws.com/0/113494/489dcdd9-76fc-fb9b-0d83-7bbed18029a9.png)
 
-![polarplot_32_1.png](https://qiita-image-store.s3.amazonaws.com/0/113494/2d464a59-dcb5-d277-52c8-3c386c02f355.png)
 
 最終的にデータフレームからこんな極座標プロットを描けるようにします。
 matplotlibを利用してのプロットはコードが煩雑になりやすいので、なるべくpandas.DataFrameのメソッドとして呼び出してコンパクトなコードでプロットできるようにします。
@@ -239,11 +239,14 @@ df.plot(style='o-')
 
 
 ```python
-df.polarplot(style='d--', ms=5, ylim=[0,1.2], yticks=np.arange(0,1.2,.2))
+df.polarplot(style='d--', ms=5,
+             ylim=[0,1.2], yticks=np.arange(0,1.2,.2),
+             xticks=np.arange(1,360,15)*np.pi/180)
 ```
 
 
-![polarplot_22_1.png](https://qiita-image-store.s3.amazonaws.com/0/113494/7c8c8283-fad2-d6c6-80e1-20b6ad78f021.png)
+![polarplot_24_1.png](https://qiita-image-store.s3.amazonaws.com/0/113494/d8feb7c5-2eec-6459-0123-e83ca7067fa6.png)
+
 
 
 
@@ -620,12 +623,15 @@ df.mirror().mirror().plot()
 
 
 ```python
-df.mirror().mirror().polarplot()
+df.mirror().mirror().polarplot(df.polarplot(style='d--', ms=5,
+                               ylim=[0,1.2], yticks=np.arange(0,1.2,.2),
+                               xticks=np.arange(1,360,15)*np.pi/180))
 plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0)  # 凡例外側
 ```
 
 
-![polarplot_32_1.png](https://qiita-image-store.s3.amazonaws.com/0/113494/12333cc5-5e61-b642-4472-aec31211f2a1.png)
+![polarplot_33_1.png](https://qiita-image-store.s3.amazonaws.com/0/113494/489dcdd9-76fc-fb9b-0d83-7bbed18029a9.png)
+
 
 
 ## ミラー化(CW=時計回り)
